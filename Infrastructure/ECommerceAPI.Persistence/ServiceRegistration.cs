@@ -6,14 +6,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ECommerceAPI.Application.Repositories;
+using ECommerceAPI.Persistence.Repositories;
 
 namespace ECommerceAPI.Persistence
 {
     public static class ServiceRegistration
     {
-        public static void AddPersistenceServices(this IServiceCollection services)
+        public static void AddPersistenceServices(this IServiceCollection services) //IOC Container
         {
-            services.AddDbContext<ECommerceAPIDbContext>(options => options.UseNpgsql(Configuration.ConnectionString)); 
+            services.AddDbContext<ECommerceAPIDbContext>(options => options.UseNpgsql(Configuration.ConnectionString));            
+            services.AddScoped<IProductWriteRepository, ProductWriteRepository>();
+            services.AddScoped<IProductReadRepository, ProductReadRepository>();
+            services.AddScoped<IOrderWriteRepository, OrderWriteRepository>();
+            services.AddScoped<IOrderReadRepository, OrderReadRepository>();
+            services.AddScoped<ICustomerReadRepository, CustomerReadRepository>();
+            services.AddScoped<ICustomerWriteRepository, CustomerWriteRepository>();
+            //Scope'da her request için oluşturulan nesne iş bittikten sonra dispose/imha edilir.
         }
     }
 }
