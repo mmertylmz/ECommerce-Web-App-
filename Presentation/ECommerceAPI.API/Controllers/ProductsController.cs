@@ -11,35 +11,32 @@ namespace ECommerceAPI.API.Controllers
     {
         private readonly IProductReadRepository _productReadRepository;
         private readonly IProductWriteRepository _productWriteRepository;
+        private readonly IOrderWriteRepository _orderWriteRepository;
+        private readonly IOrderReadRepository _orderReadRepository;
+        private readonly ICustomerWriteRepository _customerWriteRepository;
 
-        public ProductsController(IProductReadRepository productReadRepository, IProductWriteRepository productWriteRepository)
+        public ProductsController(
+            IProductReadRepository productReadRepository,
+            IProductWriteRepository productWriteRepository,
+            IOrderWriteRepository orderWriteRepository,
+            ICustomerWriteRepository customerWriteRepository,
+            IOrderReadRepository orderReadRepository)
         {
             _productReadRepository = productReadRepository;
             _productWriteRepository = productWriteRepository;
+            _orderWriteRepository = orderWriteRepository;
+            _customerWriteRepository = customerWriteRepository;
+            _orderReadRepository = orderReadRepository;
         }
 
         [HttpGet]
         public async Task Get()
         {
-            //await _productWriteRepository.AddRangeAsync(new()
-            //{
-            //    new(){Id=Guid.NewGuid(), Name="Product 1", CreatedDate=DateTime.UtcNow, Price=100, Stock=10},
-            //    new(){Id=Guid.NewGuid(), Name="Product 2", CreatedDate=DateTime.UtcNow, Price=120, Stock=30},
-            //    new(){Id=Guid.NewGuid(), Name="Product 3", CreatedDate=DateTime.UtcNow, Price=150, Stock=20}
-            //});
-            //var count = await _productWriteRepository.SaveAsync();
-
-            //Product p = await _productReadRepository.GetByIdAsync("de66c59a-2db1-4afd-8113-b5755dc19691"); //default true
-            Product p = await _productReadRepository.GetByIdAsync("de66c59a-2db1-4afd-8113-b5755dc19691",false); //change will not be affected
-            p.Name = "Mert";
-            await _productWriteRepository.SaveAsync();
+            Order o = await _orderReadRepository.GetByIdAsync("6dbeabde-57b3-43c6-8a33-f4b1365c2d72");
+            o.Adress = "Sivas";
+            await _orderWriteRepository.SaveAsync();
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(string id)
-        {
-            Product product = await _productReadRepository.GetByIdAsync(id);
-            return Ok(product);
-        }
+
     }
 }
