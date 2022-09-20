@@ -24,14 +24,14 @@ namespace ECommerceAPI.Application.Validators.Products
                 .NotEmpty()
                 .NotNull()
                     .WithMessage("Lütfen stok bilgisini boş geçmeyiniz.")
-                .Must(x => x > 0)
+                .Must(x => x >= 0)
                     .WithMessage("Stok bilgisi negatif olamaz.");
 
             RuleFor(x => x.Price)
                 .NotEmpty()
                 .NotNull()
                     .WithMessage("Lütfen fiyat bilgisini boş geçmeyiniz.")
-                .Must(x => x > 0)
+                .Must(x => x >= 0)
                     .WithMessage("Fiyat bilgisi negatif olamaz.");
 
         }
