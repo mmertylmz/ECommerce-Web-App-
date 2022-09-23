@@ -1,6 +1,6 @@
-﻿using ECommerceAPI.Application.Repositories;
+﻿using ECommerceAPI.Application.Abstractions.Storage;
+using ECommerceAPI.Application.Repositories;
 using ECommerceAPI.Application.RequestParameters;
-using ECommerceAPI.Application.Services;
 using ECommerceAPI.Application.ViewModels.Products;
 using ECommerceAPI.Domain.Entities;
 using Microsoft.AspNetCore.Http;
@@ -17,36 +17,36 @@ namespace ECommerceAPI.API.Controllers
         private readonly IProductReadRepository _productReadRepository;
         private readonly IProductWriteRepository _productWriteRepository;
         private readonly IWebHostEnvironment _webHostEnvironment;
-        private readonly IFileService _fileService;
         private readonly IFileReadRepository _fileReadRepository;
         private readonly IFileWriteRepository _fileWriteRepository;
         private readonly IProductImageFileReadRepository _productImageFileReadRepository;
         private readonly IProductImageFileWriteRepository _productImageFileWriteRepository;
         private readonly IInvoiceFileWriteRepository _invoiceFileWriteRepository;
         private readonly IInvoiceFileReadRepository _invoiceFileReadRepository;
+        private readonly IStorageService _storageService;
 
         public ProductsController(
             IProductReadRepository productReadRepository,
             IProductWriteRepository productWriteRepository,
             IWebHostEnvironment webHostEnvironment,
-            IFileService fileService,
             IFileReadRepository fileReadRepository,
             IFileWriteRepository fileWriteRepository,
             IProductImageFileReadRepository productImageFileReadRepository,
             IProductImageFileWriteRepository productImageFileWriteRepository,
             IInvoiceFileWriteRepository invoiceFileWriteRepository,
-            IInvoiceFileReadRepository invoiceFileReadRepository)
+            IInvoiceFileReadRepository invoiceFileReadRepository,
+            IStorageService storageService)
         {
             _productReadRepository = productReadRepository;
             _productWriteRepository = productWriteRepository;
             _webHostEnvironment = webHostEnvironment;
-            _fileService = fileService;
             _fileReadRepository = fileReadRepository;
             _fileWriteRepository = fileWriteRepository;
             _productImageFileReadRepository = productImageFileReadRepository;
             _productImageFileWriteRepository = productImageFileWriteRepository;
             _invoiceFileWriteRepository = invoiceFileWriteRepository;
             _invoiceFileReadRepository = invoiceFileReadRepository;
+            _storageService = storageService;
         }
 
         [HttpGet]
@@ -113,14 +113,18 @@ namespace ECommerceAPI.API.Controllers
         [HttpPost("[action]")]
         public async Task<IActionResult> Upload()
         {
-            var datas = await _fileService.UploadAsync("resource/invoice-files", Request.Form.Files);
+            //var datas = await _fileService.UploadAsync("resource/invoice-files", Request.Form.Files);
+            //var datas = await _storageService.UploadAsync("resource/files", Request.Form.Files);
+            var datas = await _storageService.UploadAsync("files", Request.Form.Files); //Azure
 
-            //await _productImageFileWriteRepository.AddRangeAsync(datas.Select(d => new ProductImageFile()
-            //{
-            //    FileName = d.fileName,
-            //    Path = d.path,
-            //}).ToList());
-            //await _productImageFileWriteRepository.SaveAsync();
+
+            await _productImageFileWriteRepository.AddRangeAsync(datas.Select(d => new ProductImageFile()
+            {
+                FileName = d.fileName,
+                Path = d.pathOrContainerName,
+                Storage = _storageService.StorageName
+            }).ToList());
+            await _productImageFileWriteRepository.SaveAsync();
 
             //await _fileWriteRepository.AddRangeAsync(datas.Select(d => new Domain.Entities.File()
             //{
@@ -140,6 +144,8 @@ namespace ECommerceAPI.API.Controllers
             //var d1 = _productImageFileReadRepository.GetAll(false);
             //var d2 = _invoiceFileReadRepository.GetAll(false);
             //var d3 = _fileReadRepository.GetAll(false);
+
+
 
             return Ok();
         }
