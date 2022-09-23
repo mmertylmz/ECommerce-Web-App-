@@ -1,5 +1,6 @@
 using ECommerceAPI.Application.Validators.Products;
 using ECommerceAPI.Application.ViewModels.Products;
+using ECommerceAPI.Infrastructure;
 using ECommerceAPI.Infrastructure.Filters;
 using ECommerceAPI.Persistence;
 using FluentValidation;
@@ -10,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddPersistenceServices(); //Extension method, Persistence/ServiceRegistration.cs
+builder.Services.AddInfrastructureServices();
 
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => //CORS Policy
     policy.WithOrigins("http://localhost:4200", "https://localhost:4200").AllowAnyHeader().AllowAnyMethod()
