@@ -43,8 +43,6 @@ namespace ECommerceAPI.Infrastructure.Services.Storage.Local
                 datas.Add((fileNewName, $"{path}\\{fileNewName}"));
             }
 
-
-            //todo make an exception if file upload gave an error.
             return datas;
         }
 

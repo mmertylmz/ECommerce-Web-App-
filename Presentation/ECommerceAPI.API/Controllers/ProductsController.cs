@@ -24,6 +24,7 @@ namespace ECommerceAPI.API.Controllers
         private readonly IInvoiceFileWriteRepository _invoiceFileWriteRepository;
         private readonly IInvoiceFileReadRepository _invoiceFileReadRepository;
         private readonly IStorageService _storageService;
+        private readonly IConfiguration _configuration;
 
         public ProductsController(
             IProductReadRepository productReadRepository,
@@ -35,7 +36,8 @@ namespace ECommerceAPI.API.Controllers
             IProductImageFileWriteRepository productImageFileWriteRepository,
             IInvoiceFileWriteRepository invoiceFileWriteRepository,
             IInvoiceFileReadRepository invoiceFileReadRepository,
-            IStorageService storageService)
+            IStorageService storageService,
+            IConfiguration configuration)
         {
             _productReadRepository = productReadRepository;
             _productWriteRepository = productWriteRepository;
@@ -47,10 +49,11 @@ namespace ECommerceAPI.API.Controllers
             _invoiceFileWriteRepository = invoiceFileWriteRepository;
             _invoiceFileReadRepository = invoiceFileReadRepository;
             _storageService = storageService;
+            _configuration = configuration;
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery]Pagination pagination)
+        public async Task<IActionResult> Get([FromQuery] Pagination pagination)
         {
             var totalCount = _productReadRepository.GetAll(false).Count();
             //Herhangi bir veritabanı işlemine tabi tutmadığımız için tracking statuslarını false yaptık. (Performans)
@@ -70,7 +73,7 @@ namespace ECommerceAPI.API.Controllers
                 products
             });
         }
-        
+
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(string id)
         {
@@ -111,44 +114,46 @@ namespace ECommerceAPI.API.Controllers
         }
 
         [HttpPost("[action]")]
-        public async Task<IActionResult> Upload()
+        public async Task<IActionResult> Upload(string id)
         {
-            //var datas = await _fileService.UploadAsync("resource/invoice-files", Request.Form.Files);
-            //var datas = await _storageService.UploadAsync("resource/files", Request.Form.Files);
-            var datas = await _storageService.UploadAsync("files", Request.Form.Files); //Azure
+            List<(string fileName, string pathOrContainerName)> datas = await _storageService.UploadAsync("productimagefile", Request.Form.Files);
 
+            Product product = await _productReadRepository.GetByIdAsync(id);
 
-            await _productImageFileWriteRepository.AddRangeAsync(datas.Select(d => new ProductImageFile()
+            await _productImageFileWriteRepository.AddRangeAsync(datas.Select(x => new ProductImageFile
             {
-                FileName = d.fileName,
-                Path = d.pathOrContainerName,
-                Storage = _storageService.StorageName
+                FileName = x.fileName,
+                Path = x.pathOrContainerName,
+                Storage = _storageService.StorageName,
+                Products = new List<Product> { product }
             }).ToList());
+
             await _productImageFileWriteRepository.SaveAsync();
-
-            //await _fileWriteRepository.AddRangeAsync(datas.Select(d => new Domain.Entities.File()
-            //{
-            //    FileName = d.fileName,
-            //    Path = d.path,
-            //}).ToList());
-            //await _fileWriteRepository.SaveAsync();
-
-            //await _invoiceFileWriteRepository.AddRangeAsync(datas.Select(d => new InvoiceFile()
-            //{
-            //    FileName = d.fileName,
-            //    Path = d.path,
-            //    Price = new Random().Next()
-            //}).ToList());
-            //await _invoiceFileWriteRepository.SaveAsync();
-
-            //var d1 = _productImageFileReadRepository.GetAll(false);
-            //var d2 = _invoiceFileReadRepository.GetAll(false);
-            //var d3 = _fileReadRepository.GetAll(false);
-
-
-
             return Ok();
         }
 
+        [HttpGet("[action]/{id}")]
+        public async Task<IActionResult> GetProductImages(string id)
+        {
+            Product? product = await _productReadRepository.Table.Include(p => p.ProductImageFiles).FirstOrDefaultAsync(x=>x.Id == Guid.Parse(id));
+
+            return Ok(product.ProductImageFiles.Select(x => new
+            {
+                Path = $"{_configuration["BaseStorageUrl"]}/{x.Path}",
+                x.FileName,
+                x.Id
+            }));
+        }
+
+        [HttpDelete("[action]/{id}")]
+        public async Task<IActionResult> DeleteProductImage(string id, string imageId)
+        {
+            Product? product = await _productReadRepository.Table.Include(p => p.ProductImageFiles).FirstOrDefaultAsync(x => x.Id == Guid.Parse(id));
+
+            ProductImageFile productImageFile = product.ProductImageFiles.FirstOrDefault(x => x.Id == Guid.Parse(imageId));
+            product.ProductImageFiles.Remove(productImageFile);
+            await _productWriteRepository.SaveAsync();
+            return Ok();
+        }
     }
 }
